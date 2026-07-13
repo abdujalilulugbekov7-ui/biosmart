@@ -643,15 +643,15 @@ export default function AdminDashboard() {
                               onChange={e => setEditRole(e.target.value)}
                               className="admin__table-select"
                             >
-                              <option value="user">User</option>
-                              <option value="admin">Admin</option>
+                              <option value="user">Foydalanuvchi</option>
+                              <option value="admin">Administrator</option>
                             </select>
                           ) : (
                             <span className={`role-badge ${profile.role === 'admin' ? 'role-badge--admin' : 'role-badge--user'}`}>
                               {profile.role === 'admin' ? (
-                                <><FiShield /> Admin</>
+                                <><FiShield /> Administrator</>
                               ) : (
-                                'User'
+                                'Foydalanuvchi'
                               )}
                             </span>
                           )}

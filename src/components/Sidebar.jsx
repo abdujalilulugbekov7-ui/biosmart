@@ -62,15 +62,15 @@ export default function Sidebar() {
         <nav className="sidebar__nav">
           <NavLink to="/" className={({isActive}) => `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`} onClick={() => setMobileOpen(false)}>
             <FiHome className="sidebar__link-icon" />
-            <span>Dashboard</span>
+            <span>Boshqaruv paneli</span>
           </NavLink>
           <NavLink to="/library" className={({isActive}) => `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`} onClick={() => setMobileOpen(false)}>
             <FiBook className="sidebar__link-icon" />
-            <span>Digital Library</span>
+            <span>Raqamli kutubxona</span>
           </NavLink>
           <NavLink to="/analytics" className={({isActive}) => `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`} onClick={() => setMobileOpen(false)}>
             <FiBarChart2 className="sidebar__link-icon" />
-            <span>Analytics / Profile</span>
+            <span>Tahlillar / Profil</span>
           </NavLink>
           <NavLink to="/settings" className={({isActive}) => `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`} onClick={() => setMobileOpen(false)}>
             <FiSettings className="sidebar__link-icon animate-spin-slow" />
@@ -79,7 +79,7 @@ export default function Sidebar() {
           {isAdmin && (
             <NavLink to="/admin" className={({isActive}) => `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`} onClick={() => setMobileOpen(false)}>
               <FiShield className="sidebar__link-icon" />
-              <span>Admin Control</span>
+              <span>Admin boshqaruvi</span>
               <span className="sidebar__badge">Admin</span>
             </NavLink>
           )}

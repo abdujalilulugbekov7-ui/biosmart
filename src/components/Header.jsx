@@ -93,7 +93,7 @@ export default function Header() {
     if (url && (url.startsWith('http') || url.startsWith('data:'))) {
       return (
         <div className="header-profile__avatar" style={{ overflow: 'hidden', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <img src={url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img src={url} alt="Profil rasmi" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
       );
     }

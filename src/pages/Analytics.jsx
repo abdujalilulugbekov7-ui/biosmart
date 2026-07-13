@@ -197,7 +197,7 @@ export default function Analytics() {
     if (url && (url.startsWith('http') || url.startsWith('data:'))) {
       return (
         <div className="analytics__avatar analytics__avatar--image">
-          <img src={url} alt="Avatar" />
+          <img src={url} alt="Profil rasmi" />
         </div>
       );
     }

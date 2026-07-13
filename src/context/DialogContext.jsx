@@ -10,7 +10,7 @@ export function DialogProvider({ children }) {
     type: 'alert', // 'alert' | 'confirm'
     title: 'Bildirishnoma',
     message: '',
-    confirmText: 'OK',
+    confirmText: 'Tushunarli',
     cancelText: 'Bekor qilish',
     variant: 'info' // 'info' | 'success' | 'warning' | 'danger'
   });

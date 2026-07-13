@@ -501,7 +501,7 @@ export default function Premium() {
               {/* Test Mode Banner */}
               <div className="click-test-alert">
                 <div className="test-alert-content">
-                  <strong>💡 TEST REJIMI:</strong>
+                  <strong>💡 SINOV REJIMI:</strong>
                   <span> Sinab ko'rish uchun ixtiyoriy 16 xonali karta raqami kiriting. Uzcard (8600...) yoki Humo (9860...) yozilganda, CVV kod maydoni avtomatik yashiriladi va talab etilmaydi! Visa (4...) kabi kartalar kiritilganda esa CVV (masalan, 123) talab qilinadi.</span>
                 </div>
               </div>
@@ -523,8 +523,8 @@ export default function Premium() {
                 </div>
                 <div className="v-card-bottom-row">
                   <div className="v-card-holder">
-                    <span>KARTA EGLASI</span>
-                    <strong>{profile?.full_name ? profile.full_name.toUpperCase() : 'BIOSMART USER'}</strong>
+                    <span>KARTA EGASI</span>
+                    <strong>{profile?.full_name ? profile.full_name.toUpperCase() : 'BIOSMART FOYDALANUVCHI'}</strong>
                   </div>
                   <div className="v-card-expiry">
                     <span>MUDDATI</span>
@@ -571,7 +571,7 @@ export default function Premium() {
 
                 {getCardType(cardNumber) !== 'uzcard' && getCardType(cardNumber) !== 'humo' && (
                   <div className="click-form-group">
-                    <label className="click-input-label">CVV / CVC kod</label>
+                    <label className="click-input-label">Xavfsizlik kodi (CVV/CVC)</label>
                     <div className="click-input-wrapper">
                       <FiLock className="click-field-icon" />
                       <input 

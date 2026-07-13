@@ -291,6 +291,12 @@ export default function DigitalLibrary() {
     return 'difficulty--hard';
   };
 
+  const getDifficultyLabel = (d) => {
+    if (d === 'Easy') return 'Oson';
+    if (d === 'Medium') return "O'rtacha";
+    return 'Qiyin';
+  };
+
   const goBack = () => {
     setSelectedTopicIds([]);
     setSelectedSubject(null);
@@ -352,7 +358,7 @@ export default function DigitalLibrary() {
                       <div className="topic-card__header">
                         <span className="topic-card__number">{gradeName} • {subjectName}</span>
                         <span className={`topic-card__difficulty ${getDifficultyClass(topic.difficulty)}`}>
-                          {topic.difficulty}
+                          {getDifficultyLabel(topic.difficulty)}
                         </span>
                       </div>
                       <div className="topic-card__info">
@@ -528,7 +534,7 @@ export default function DigitalLibrary() {
                           <span className="topic-card__number">Mavzu {i + 1}</span>
                         </div>
                         <span className={`topic-card__difficulty ${getDifficultyClass(topic.difficulty)}`}>
-                          {topic.difficulty}
+                          {getDifficultyLabel(topic.difficulty)}
                         </span>
                       </div>
                       <div className="topic-card__info">
