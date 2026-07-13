@@ -21,8 +21,10 @@ import {
   FiPercent,
   FiDollarSign,
   FiCheck,
-  FiXCircle
+  FiXCircle,
+  FiActivity
 } from 'react-icons/fi';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import './AdminDashboard.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -62,6 +64,104 @@ export default function AdminDashboard() {
   const [paymentsList, setPaymentsList] = useState([]);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState('pending');
+
+  // User activity tab state
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedUserActivity, setSelectedUserActivity] = useState(null);
+  const [userActivityLoading, setUserActivityLoading] = useState(false);
+
+  const fetchUserActivityData = async (userId) => {
+    if (!userId) {
+      setSelectedUserActivity(null);
+      return;
+    }
+    setUserActivityLoading(true);
+    try {
+      // 1. Get profile details
+      const { data: profileData, error: profileErr } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (profileErr) throw profileErr;
+
+      // 2. Get test attempts
+      const { data: attemptsData, error: attemptsErr } = await supabase
+        .from('test_attempts')
+        .select('*, topics(title)')
+        .eq('user_id', userId)
+        .order('completed_at', { ascending: false });
+      
+      if (attemptsErr) throw attemptsErr;
+
+      // 3. Get user progress
+      const { data: progressData, error: progressErr } = await supabase
+        .from('user_progress')
+        .select('*, topics(title, subjects(name))')
+        .eq('user_id', userId)
+        .order('last_accessed', { ascending: false });
+
+      if (progressErr) throw progressErr;
+
+      // 4. Calculate stats (total questions, accuracy, weekly activity)
+      let totalQ = 0;
+      let totalScore = 0;
+      let accuracy = 0;
+      
+      const activity = [
+        { name: 'Du', value: 0 }, { name: 'Se', value: 0 }, { name: 'Cho', value: 0 },
+        { name: 'Pa', value: 0 }, { name: 'Ju', value: 0 }, { name: 'Sha', value: 0 }, { name: 'Ya', value: 0 }
+      ];
+
+      if (attemptsData && attemptsData.length > 0) {
+        totalQ = attemptsData.reduce((a, b) => a + b.total_questions, 0);
+        totalScore = attemptsData.reduce((a, b) => a + b.score, 0);
+        accuracy = totalQ > 0 ? Math.round((totalScore / totalQ) * 100) : 0;
+
+        const daysMapping = [6, 0, 1, 2, 3, 4, 5];
+        const startOfWeek = new Date();
+        const currentDay = startOfWeek.getDay();
+        const distanceToMonday = currentDay === 0 ? 6 : currentDay - 1;
+        startOfWeek.setDate(startOfWeek.getDate() - distanceToMonday);
+        startOfWeek.setHours(0, 0, 0, 0);
+
+        attemptsData.forEach(attempt => {
+          const attemptDate = new Date(attempt.completed_at);
+          if (attemptDate >= startOfWeek) {
+            const dayIdx = attemptDate.getDay();
+            const mappedIdx = daysMapping[dayIdx];
+            if (mappedIdx !== undefined) {
+              activity[mappedIdx].value += 1;
+            }
+          }
+        });
+      }
+
+      setSelectedUserActivity({
+        profile: profileData,
+        attempts: attemptsData || [],
+        progress: progressData || [],
+        stats: {
+          totalQuestions: totalQ,
+          accuracy,
+          totalAttempts: attemptsData?.length || 0
+        },
+        weeklyActivity: activity
+      });
+    } catch (e) {
+      console.error("Error fetching user activity data:", e);
+      showAlert("Foydalanuvchi ma'lumotlarini yuklashda xatolik yuz berdi.", { title: 'Xatolik', variant: 'danger' });
+    } finally {
+      setUserActivityLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'user-activity' && selectedUserId) {
+      fetchUserActivityData(selectedUserId);
+    }
+  }, [selectedUserId, activeTab]);
 
   useEffect(() => {
     fetchStats();
@@ -506,6 +606,17 @@ export default function AdminDashboard() {
         >
           <FiDollarSign /> To'lovlar ({stats.pendingPayments})
         </button>
+        <button
+          className={`admin__tab-btn ${activeTab === 'user-activity' ? 'admin__tab-btn--active' : ''}`}
+          onClick={() => {
+            setActiveTab('user-activity');
+            if (!selectedUserId && profilesList.length > 0) {
+              setSelectedUserId(profilesList[0].id);
+            }
+          }}
+        >
+          <FiActivity /> Foydalanuvchilar faolligi
+        </button>
       </div>
 
       {/* TAB CONTENT: OVERVIEW */}
@@ -682,7 +793,16 @@ export default function AdminDashboard() {
                         <td>
                           <div className="tests-cell">
                             <FiAward className={testsCompleted > 0 ? 'icon-success' : 'icon-light'} />
-                            <span>{testsCompleted} ta test</span>
+                            <span 
+                              style={{ cursor: 'pointer', textDecoration: 'underline', color: 'var(--primary)' }}
+                              onClick={() => {
+                                setSelectedUserId(profile.id);
+                                setActiveTab('user-activity');
+                              }}
+                              title="Tahlillarni ko'rish"
+                            >
+                              {testsCompleted} ta test
+                            </span>
                           </div>
                         </td>
 
@@ -1063,6 +1183,185 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* TAB CONTENT: USER ACTIVITY / DASHBOARDS */}
+      {activeTab === 'user-activity' && (
+        <div className="admin__user-activity-section">
+          <div className="admin__card" style={{ marginBottom: '24px' }}>
+            <div className="admin__card-header" style={{ marginBottom: '16px' }}>
+              <h3>Foydalanuvchi faolligini tekshirish</h3>
+              <p className="admin__users-header-subtitle">Tizimdagi istalgan foydalanuvchini tanlab, ularning shaxsiy yutuqlari va o'zlashtirish ko'rsatkichlarini ko'rishingiz mumkin.</p>
+            </div>
+            
+            <div className="admin__user-select-row">
+              <label className="ann-input-label" style={{ marginBottom: '0', alignSelf: 'center' }}>Foydalanuvchini tanlang:</label>
+              <select
+                value={selectedUserId}
+                onChange={e => setSelectedUserId(e.target.value)}
+                className="admin__table-select"
+                style={{ maxWidth: '300px', marginLeft: '12px', background: 'var(--bg-secondary)' }}
+              >
+                <option value="">-- Foydalanuvchini tanlang --</option>
+                {profilesList.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.full_name || 'Foydalanuvchi'} ({p.grade || 'Sinf belgilanmagan'})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {userActivityLoading ? (
+            <div className="admin__users-loading">
+              <div className="admin__spinner"></div>
+              <p>Foydalanuvchi ma'lumotlari yuklanmoqda...</p>
+            </div>
+          ) : !selectedUserActivity ? (
+            <div className="admin__card">
+              <div className="admin__users-empty">
+                <FiUsers className="empty-icon" />
+                <p>Hech qanday foydalanuvchi tanlanmagan</p>
+                <span>Tahlillarni ko'rish uchun yuqoridagi ro'yxatdan foydalanuvchini tanlang</span>
+              </div>
+            </div>
+          ) : (
+            <div className="admin__user-dashboard-replica">
+              {/* Profile Card Header */}
+              <div className="admin__card user-profile-summary-card" style={{ marginBottom: '24px' }}>
+                <div className="user-profile-summary-layout">
+                  <div className="user-profile-summary-avatar">
+                    {(selectedUserActivity.profile.full_name || 'U').charAt(0).toUpperCase()}
+                  </div>
+                  <div className="user-profile-summary-details">
+                    <div className="user-profile-summary-name-row">
+                      <h2>{selectedUserActivity.profile.full_name || 'Foydalanuvchi'}</h2>
+                      <span className={`role-badge ${selectedUserActivity.profile.role === 'admin' ? 'role-badge--admin' : 'role-badge--user'}`}>
+                        {selectedUserActivity.profile.role === 'admin' ? 'Administrator' : 'Foydalanuvchi'}
+                      </span>
+                      {selectedUserActivity.profile.is_pro && (
+                        <span className="sidebar__badge" style={{ background: 'rgba(241, 196, 15, 0.2)', color: '#f1c40f', marginLeft: '8px' }}>PRO</span>
+                      )}
+                    </div>
+                    <div className="user-profile-summary-meta">
+                      <span>ID: <strong>{selectedUserActivity.profile.id.substring(0, 8)}...</strong></span>
+                      {selectedUserActivity.profile.email && <span>Email: <strong>{selectedUserActivity.profile.email}</strong></span>}
+                      {selectedUserActivity.profile.phone && <span>Telefon: <strong>{selectedUserActivity.profile.phone}</strong></span>}
+                      <span>Sinf: <strong>{selectedUserActivity.profile.grade || 'Noma\'lum'}</strong></span>
+                      <span>Ro'yxatdan o'tdi: <strong>{new Date(selectedUserActivity.profile.created_at).toLocaleDateString()}</strong></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats Cards */}
+              <div className="admin__stats" style={{ marginBottom: '24px' }}>
+                <div className="admin__stat-card">
+                  <FiAward className="admin__stat-icon" />
+                  <div>
+                    <h3>Jami topshirilgan testlar</h3>
+                    <p>{selectedUserActivity.stats.totalAttempts} ta</p>
+                  </div>
+                </div>
+                <div className="admin__stat-card">
+                  <FiFileText className="admin__stat-icon" style={{ color: '#00c6ff', background: 'rgba(0,198,255,0.1)' }} />
+                  <div>
+                    <h3>Jami yechilgan savollar</h3>
+                    <p>{selectedUserActivity.stats.totalQuestions} ta</p>
+                  </div>
+                </div>
+                <div className="admin__stat-card">
+                  <FiPercent className="admin__stat-icon" style={{ color: '#27ae60', background: 'rgba(39,174,96,0.1)' }} />
+                  <div>
+                    <h3>O'rtacha aniqlik darajasi</h3>
+                    <p>{selectedUserActivity.stats.accuracy}%</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grid with activity chart and detailed progress/attempts */}
+              <div className="admin__grid">
+                {/* Left: Chart and Reading Progress */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  <div className="admin__card">
+                    <div className="admin__card-header" style={{ marginBottom: '16px' }}>
+                      <h3>Haftalik faollik grafigi</h3>
+                    </div>
+                    <div style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                      <ResponsiveContainer width="100%" height={160}>
+                        <BarChart data={selectedUserActivity.weeklyActivity}>
+                          <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
+                          <YAxis hide />
+                          <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 11 }} />
+                          <Bar dataKey="value" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  <div className="admin__card">
+                    <div className="admin__card-header" style={{ marginBottom: '16px' }}>
+                      <h3>Kitob o'qish progressi ({selectedUserActivity.progress.length} ta mavzu)</h3>
+                    </div>
+                    <div className="admin__list" style={{ maxHeight: '250px', overflowY: 'auto' }}>
+                      {selectedUserActivity.progress.length === 0 ? (
+                        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '12px' }}>Hozircha hech qaysi mavzu o'qilmagan.</p>
+                      ) : (
+                        selectedUserActivity.progress.map(prog => (
+                          <div key={prog.id} className="admin__list-item" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <strong style={{ fontSize: '13px' }}>{prog.topics?.title}</strong>
+                              <span className="grade-display" style={{ background: 'var(--primary-bg)', color: 'var(--primary)' }}>{prog.progress}%</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                              <span>Fan: {prog.topics?.subjects?.name}</span>
+                              <span>Oxirgi kirish: {new Date(prog.last_accessed).toLocaleDateString()}</span>
+                            </div>
+                            <div style={{ background: 'var(--border)', height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
+                              <div style={{ width: `${prog.progress}%`, background: 'var(--primary)', height: '100%' }}></div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Test attempts list */}
+                <div className="admin__card">
+                  <div className="admin__card-header" style={{ marginBottom: '16px' }}>
+                    <h3>Topshirilgan testlar tarixi</h3>
+                  </div>
+                  <div className="admin__list" style={{ maxHeight: '460px', overflowY: 'auto' }}>
+                    {selectedUserActivity.attempts.length === 0 ? (
+                      <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '12px' }}>Topshirilgan testlar tarixi mavjud emas.</p>
+                    ) : (
+                      selectedUserActivity.attempts.map(attempt => {
+                        const pct = attempt.total_questions > 0 ? Math.round((attempt.score / attempt.total_questions) * 100) : 0;
+                        const durationMin = Math.floor(attempt.time_spent / 60);
+                        const durationSec = attempt.time_spent % 60;
+                        return (
+                          <div key={attempt.id} className="admin__list-item" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <strong style={{ fontSize: '13px' }}>{attempt.topics?.title}</strong>
+                              <span className={`role-badge ${pct >= 70 ? 'role-badge--admin' : 'role-badge--user'}`} style={{ border: 'none' }}>
+                                {attempt.score} / {attempt.total_questions} ({pct}%)
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                              <span>Sarflangan vaqt: {durationMin > 0 ? `${durationMin} daqiqa ` : ''}{durationSec} soniya</span>
+                              <span>Sana: {new Date(attempt.completed_at).toLocaleString()}</span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -948,3 +948,80 @@
   font-weight: 600;
   margin-left: 4px;
 }
+
+/* ==========================================================================
+   USER DASHBOARD REPLICA STYLING
+   ========================================================================== */
+.admin__user-activity-section {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.admin__user-select-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.user-profile-summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+
+.user-profile-summary-layout {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.user-profile-summary-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--primary-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 24px;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.user-profile-summary-details {
+  flex: 1;
+}
+
+.user-profile-summary-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.user-profile-summary-name-row h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.user-profile-summary-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.user-profile-summary-meta span strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.admin__user-dashboard-replica {
+  animation: fadeIn 0.3s ease-out;
+}
+
