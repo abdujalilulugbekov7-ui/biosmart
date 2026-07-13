@@ -1,0 +1,224 @@
+.reader {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--header-height, 0px) - 40px);
+  animation: fadeIn 0.5s ease-out;
+}
+
+.reader__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.reader__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.reader__back:hover {
+  gap: 10px;
+}
+
+.reader__meta {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.reader__speak {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary-bg);
+  color: var(--primary);
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.reader__speak:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+.reader__container {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.reader__progress-bar {
+  height: 4px;
+  background: var(--border-light);
+  width: 100%;
+}
+
+.reader__progress-fill {
+  height: 100%;
+  background: var(--primary-gradient);
+  transition: width 0.1s ease;
+}
+
+.reader__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 48px;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.reader__title {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.25;
+  letter-spacing: -1px;
+}
+
+.reader__time-estimate {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 12px;
+  margin-bottom: 32px;
+  font-weight: 500;
+}
+
+.reader__content {
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--text-primary);
+}
+
+.reader__content p {
+  margin-bottom: 20px;
+}
+
+.reader__content h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 36px;
+  margin-bottom: 16px;
+  color: var(--text-primary);
+}
+
+.reader__content h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 24px;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.reader__content ul,
+.reader__content ol {
+  margin-bottom: 20px;
+  padding-left: 20px;
+}
+
+.reader__content li {
+  margin-bottom: 8px;
+}
+
+.reader__footer {
+  margin-top: 64px;
+  border-top: 1px solid var(--border);
+  padding-top: 40px;
+}
+
+.reader__footer-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  text-align: center;
+}
+
+.reader__footer-card h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.reader__footer-card p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.reader__finish-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  background: var(--primary-gradient);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.reader__finish-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-primary);
+}
+
+.reader-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  gap: 16px;
+  color: var(--text-secondary);
+}
+
+.reader-back-btn {
+  padding: 10px 24px;
+  background: var(--primary-gradient);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .reader__body {
+    padding: 24px;
+  }
+  .reader__title {
+    font-size: 24px;
+  }
+}

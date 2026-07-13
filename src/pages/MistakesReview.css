@@ -1,0 +1,390 @@
+.mistakes-review {
+  padding: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.mistakes-review__header {
+  margin-bottom: 30px;
+}
+
+.mistakes-review__back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 16px;
+  transition: var(--transition);
+}
+
+.mistakes-review__back-btn:hover {
+  color: var(--primary);
+  transform: translateX(-4px);
+}
+
+.mistakes-review__title-wrapper h2 {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+}
+
+.mistakes-review__title-wrapper p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Horizontal tabs for grades */
+.mistakes-review__tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.mistakes-review__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 30px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition);
+}
+
+.mistakes-review__tab:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-bg);
+}
+
+.mistakes-review__tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  box-shadow: var(--shadow-primary);
+}
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e74c3c;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  height: 18px;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  border: 1px solid var(--bg-card);
+}
+
+.mistakes-review__tab.active .tab-badge {
+  background: #fff;
+  color: #e74c3c;
+}
+
+/* Action panel */
+.mistakes-review__action-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--primary-bg);
+  border: 1px solid rgba(45, 106, 79, 0.15);
+  border-radius: var(--radius-lg);
+  padding: 16px 24px;
+  margin-bottom: 24px;
+  animation: slideInUp 0.3s ease-out;
+}
+
+.mistakes-review__action-panel p {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.mistakes-test-start-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--primary-gradient);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.mistakes-test-start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-primary);
+}
+
+/* Grid layout for mistake cards */
+.mistakes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .mistakes-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .mistakes-grid {
+    grid-template-columns: 1fr;
+  }
+  .mistakes-review__action-panel {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+}
+
+/* Mistake Card style */
+.mistake-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  animation: slideInUp 0.4s ease-out both;
+}
+
+.mistake-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] .mistake-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.mistake-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.mistake-card__breadcrumbs {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mistake-card__delete-btn {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.mistake-card__delete-btn:hover {
+  color: #e74c3c;
+  background: rgba(231, 76, 60, 0.1);
+}
+
+.mistake-card__question {
+  margin-bottom: 18px;
+}
+
+.mistake-card__question p {
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Static Display options list */
+.mistake-card__options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.mistake-card__option-static {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  position: relative;
+}
+
+.option-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.option-text {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.4;
+  margin-right: 80px; /* Leave space for badge */
+}
+
+/* Style variants for static answer statuses */
+.option-btn--correct {
+  border-color: var(--success) !important;
+  background: rgba(39, 174, 96, 0.08) !important;
+}
+
+.option-btn--correct .option-label {
+  background: var(--success) !important;
+  color: #fff !important;
+}
+
+.option-btn--correct .option-text {
+  color: var(--success) !important;
+  font-weight: 600;
+}
+
+.option-btn--wrong {
+  border-color: var(--danger) !important;
+  background: rgba(231, 76, 60, 0.08) !important;
+}
+
+.option-btn--wrong .option-label {
+  background: var(--danger) !important;
+  color: #fff !important;
+}
+
+.option-btn--wrong .option-text {
+  color: var(--danger) !important;
+  font-weight: 600;
+}
+
+.option-btn--static {
+  opacity: 0.85;
+}
+
+/* Status Badges */
+.option-status-badge {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.option-status-badge--correct {
+  background: var(--success);
+  color: #fff;
+}
+
+.option-status-badge--wrong {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* Explanation Section */
+.mistake-card__explanation-box {
+  margin-top: auto;
+  padding: 12px;
+  background: var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.mistake-card__explanation-box strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.mistake-card__explanation-box p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+/* Empty state design */
+.mistakes-empty {
+  text-align: center;
+  padding: 80px 40px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  max-width: 600px;
+  margin: 40px auto;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+}
+
+.mistakes-empty__icon {
+  font-size: 54px;
+  margin-bottom: 20px;
+}
+
+.mistakes-empty h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.mistakes-empty p {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin: 0;
+  line-height: 1.5;
+}
