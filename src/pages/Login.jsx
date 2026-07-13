@@ -13,6 +13,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
+  const [loginMethod, setLoginMethod] = useState('otp'); // 'otp' | 'password'
   const { signInWithOtp, verifyOtp, signUp, signIn } = useAuth();
   const navigate = useNavigate();
 
@@ -63,11 +64,8 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      if (isRegister) {
-        await signUp(cleanPhone);
-      } else {
-        await signInWithOtp(cleanPhone);
-      }
+      // Supabase signInWithOtp will automatically sign up the user if they don't exist
+      await signInWithOtp(cleanPhone);
       setSuccess('Tasdiqlash kodi SMS orqali yuborildi');
       setStep('otp');
     } catch (err) {
@@ -129,6 +127,28 @@ export default function Login() {
     }
   };
 
+  const handlePasswordLogin = async (e) => {
+    e.preventDefault();
+    if (cleanPhone === '+998' || cleanPhone.length < 13) {
+      setError('Iltimos, telefon raqamingizni to\'liq kiriting.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Parol kamida 6 ta belgidan iborat bo\'lishi kerak');
+      return;
+    }
+    setError('');
+    setLoading(true);
+    try {
+      await signIn(cleanPhone, password);
+      navigate('/');
+    } catch (err) {
+      setError(err.message || 'Telefon raqam yoki parol noto\'g\'ri');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleBack = () => {
     setError('');
     setSuccess('');
@@ -151,6 +171,7 @@ export default function Login() {
     setFullName('');
     setError('');
     setSuccess('');
+    setLoginMethod('otp');
   };
 
   const renderPhoneStep = () => (
@@ -168,6 +189,37 @@ export default function Login() {
       </div>
       <button type="submit" className="login-form__btn" disabled={loading}>
         {loading ? 'Yuborilmoqda...' : isRegister ? 'Kod yuborish' : 'Kirish kodi yuborish'}
+      </button>
+    </form>
+  );
+
+  const renderPasswordLoginForm = () => (
+    <form onSubmit={handlePasswordLogin} className="login-form">
+      <div className="login-form__group">
+        <label className="login-form__label">Telefon raqami</label>
+        <input
+          type="text"
+          className="login-form__input"
+          placeholder="+998 (90) 123-45-67"
+          value={phone}
+          onChange={handlePhoneChange}
+          required
+        />
+      </div>
+      <div className="login-form__group" style={{ marginTop: '15px' }}>
+        <label className="login-form__label">Parol</label>
+        <input
+          type="password"
+          className="login-form__input"
+          placeholder="Parolingizni kiriting"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          required
+          minLength={6}
+        />
+      </div>
+      <button type="submit" className="login-form__btn" disabled={loading} style={{ marginTop: '20px' }}>
+        {loading ? 'Kirilmoqda...' : 'Tizimga kirish'}
       </button>
     </form>
   );
@@ -279,7 +331,52 @@ export default function Login() {
         {error && <div className="login-alert login-alert--error">{error}</div>}
         {success && <div className="login-alert login-alert--success">{success}</div>}
 
-        {step === 'phone' && renderPhoneStep()}
+        {step === 'phone' && !isRegister && (
+          <div className="login-method-toggle" style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+            <button 
+              type="button"
+              className={`login-method-btn ${loginMethod === 'otp' ? 'active' : ''}`}
+              onClick={() => { setLoginMethod('otp'); setError(''); setPassword(''); }}
+              style={{
+                flex: 1,
+                padding: '10px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color, #e0e0e0)',
+                background: loginMethod === 'otp' ? '#2ecc71' : 'transparent',
+                color: loginMethod === 'otp' ? '#fff' : 'inherit',
+                cursor: 'pointer',
+                fontWeight: '500',
+                transition: 'all 0.2s'
+              }}
+            >
+              SMS orqali
+            </button>
+            <button 
+              type="button"
+              className={`login-method-btn ${loginMethod === 'password' ? 'active' : ''}`}
+              onClick={() => { setLoginMethod('password'); setError(''); setPassword(''); }}
+              style={{
+                flex: 1,
+                padding: '10px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color, #e0e0e0)',
+                background: loginMethod === 'password' ? '#2ecc71' : 'transparent',
+                color: loginMethod === 'password' ? '#fff' : 'inherit',
+                cursor: 'pointer',
+                fontWeight: '500',
+                transition: 'all 0.2s'
+              }}
+            >
+              Parol orqali
+            </button>
+          </div>
+        )}
+
+        {step === 'phone' && (
+          isRegister 
+            ? renderPhoneStep() 
+            : (loginMethod === 'otp' ? renderPhoneStep() : renderPasswordLoginForm())
+        )}
         {step === 'otp' && renderOtpStep()}
         {step === 'password' && renderPasswordStep()}
 
