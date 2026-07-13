@@ -22,7 +22,6 @@ export function AuthProvider({ children }) {
       if (data) {
         setProfile(data);
       } else {
-        // Profile doesn't exist yet — create a default one
         const newProfile = {
           id: userId,
           full_name: userMeta?.full_name || userMeta?.phone || 'Foydalanuvchi',
@@ -65,22 +64,44 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signUp = async (phone, password, fullName) => {
+    if (password && fullName) {
+      const { data, error } = await supabase.auth.updateUser({
+        password,
+        data: { full_name: fullName }
+      });
+      if (error) throw error;
+      return data;
+    }
+    
     const { data, error } = await supabase.auth.signUp({
       phone,
-      password,
+      password: '',
       options: {
-        data: { full_name: fullName }
+        data: { full_name: fullName || '' }
       }
     });
     if (error) throw error;
     return data;
   };
 
-  const signIn = async (phone, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
+  const signInWithOtp = async (phone) => {
+    const { data, error } = await supabase.auth.signInWithOtp({ phone });
+    if (error) throw error;
+    return data;
+  };
+
+  const verifyOtp = async (phone, token) => {
+    const { data, error } = await supabase.auth.verifyOtp({
       phone,
-      password,
+      token,
+      type: 'sms',
     });
+    if (error) throw error;
+    return data;
+  };
+
+  const signIn = async (phone, password) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ phone, password });
     if (error) throw error;
     return data;
   };
@@ -164,6 +185,8 @@ export function AuthProvider({ children }) {
     isPro,
     loading,
     signUp,
+    signInWithOtp,
+    verifyOtp,
     signIn,
     signOut,
     fetchProfile,

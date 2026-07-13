@@ -4,14 +4,16 @@ import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
 export default function Login() {
+  const [step, setStep] = useState('phone'); // 'phone' | 'otp' | 'password' (for new users)
   const [isRegister, setIsRegister] = useState(false);
   const [phone, setPhone] = useState('+998');
+  const [otp, setOtp] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
-  const { signIn, signUp } = useAuth();
+  const { signInWithOtp, verifyOtp, signUp, signIn } = useAuth();
   const navigate = useNavigate();
 
   const handlePhoneChange = (e) => {
@@ -46,34 +48,181 @@ export default function Login() {
     setPhone(formatted);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setLoading(true);
-    
-    const cleanPhone = phone.replace(/[^+\d]/g, '');
+  const handleOtpChange = (e) => {
+    const input = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setOtp(input);
+  };
+
+  const cleanPhone = phone.replace(/[^+\d]/g, '');
+
+  const sendOtp = async () => {
     if (cleanPhone === '+998' || cleanPhone.length < 13) {
       setError('Iltimos, telefon raqamingizni to\'liq kiriting.');
-      setLoading(false);
       return;
     }
-
+    setError('');
+    setLoading(true);
     try {
       if (isRegister) {
-        await signUp(cleanPhone, password, fullName);
-        await signIn(cleanPhone, password);
-        navigate('/');
+        await signUp(cleanPhone);
       } else {
-        await signIn(cleanPhone, password);
-        navigate('/');
+        await signInWithOtp(cleanPhone);
       }
+      setSuccess('Tasdiqlash kodi SMS orqali yuborildi');
+      setStep('otp');
     } catch (err) {
       setError(err.message || 'Xatolik yuz berdi');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleOtpSubmit = async (e) => {
+    e.preventDefault();
+    if (otp.length !== 6) {
+      setError('6 xonali kodni kiriting');
+      return;
+    }
+    setError('');
+    setLoading(true);
+    try {
+      const { session } = await verifyOtp(cleanPhone, otp);
+      if (session) {
+        // User already has password set - logged in
+        navigate('/');
+      } else if (isRegister) {
+        // New user - need to set password
+        setStep('password');
+      } else {
+        // Existing user without password - should not happen with OTP
+        setError('Parol o\'rnatilmagan. Iltimos, ro\'yxatdan o\'ting.');
+      }
+    } catch (err) {
+      setError(err.message || 'Noto\'g\'ri kod');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (password.length < 6) {
+      setError('Parol kamida 6 ta belgidan iborat bo\'lishi kerak');
+      return;
+    }
+    if (!fullName.trim()) {
+      setError('Ismingizni kiriting');
+      return;
+    }
+    setError('');
+    setLoading(true);
+    try {
+      // Set password for new user
+      await signUp(cleanPhone, password, fullName);
+      // Sign in with phone + password
+      await signIn(cleanPhone, password);
+      navigate('/');
+    } catch (err) {
+      setError(err.message || 'Xatolik yuz berdi');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBack = () => {
+    setError('');
+    setSuccess('');
+    if (step === 'otp') {
+      setStep('phone');
+      setOtp('');
+    } else if (step === 'password') {
+      setStep('otp');
+      setPassword('');
+      setFullName('');
+    }
+  };
+
+  const switchMode = () => {
+    setIsRegister(!isRegister);
+    setStep('phone');
+    setPhone('+998');
+    setOtp('');
+    setPassword('');
+    setFullName('');
+    setError('');
+    setSuccess('');
+  };
+
+  const renderPhoneStep = () => (
+    <form onSubmit={(e) => { e.preventDefault(); sendOtp(); }} className="login-form">
+      <div className="login-form__group">
+        <label className="login-form__label">Telefon raqami</label>
+        <input
+          type="text"
+          className="login-form__input"
+          placeholder="+998 (90) 123-45-67"
+          value={phone}
+          onChange={handlePhoneChange}
+          required
+        />
+      </div>
+      <button type="submit" className="login-form__btn" disabled={loading}>
+        {loading ? 'Yuborilmoqda...' : isRegister ? 'Kod yuborish' : 'Kirish kodi yuborish'}
+      </button>
+    </form>
+  );
+
+  const renderOtpStep = () => (
+    <form onSubmit={handleOtpSubmit} className="login-form">
+      <div className="login-form__group">
+        <label className="login-form__label">SMS kod (6 xona)</label>
+        <input
+          type="text"
+          className="login-form__input login-form__input--otp"
+          placeholder="123456"
+          value={otp}
+          onChange={handleOtpChange}
+          maxLength={6}
+          required
+          autoComplete="one-time-code"
+        />
+      </div>
+      <button type="submit" className="login-form__btn" disabled={loading}>
+        {loading ? 'Tekshirilmoqda...' : 'Tasdiqlash'}
+      </button>
+    </form>
+  );
+
+  const renderPasswordStep = () => (
+    <form onSubmit={handlePasswordSubmit} className="login-form">
+      <div className="login-form__group">
+        <label className="login-form__label">To'liq ism</label>
+        <input
+          type="text"
+          className="login-form__input"
+          placeholder="Ismingizni kiriting"
+          value={fullName}
+          onChange={e => setFullName(e.target.value)}
+          required
+        />
+      </div>
+      <div className="login-form__group">
+        <label className="login-form__label">Yangi parol</label>
+        <input
+          type="password"
+          className="login-form__input"
+          placeholder="Kamida 6 belgi"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          required
+          minLength={6}
+        />
+      </div>
+      <button type="submit" className="login-form__btn" disabled={loading}>
+        {loading ? 'Saqlanmoqda...' : 'Parol o\'rnatish va kirish'}
+      </button>
+    </form>
+  );
 
   return (
     <div className="login-page">
@@ -119,61 +268,35 @@ export default function Login() {
             Bio<span className="login-card__title--highlight">Smart</span>
           </h1>
           <p className="login-card__subtitle">
-            {isRegister ? 'Yangi hisob yarating' : 'Tizimga kirish'}
+            {step === 'phone' 
+              ? (isRegister ? 'Yangi hisob yarating' : 'Tizimga kirish')
+              : step === 'otp'
+              ? 'Tasdiqlash kodi kiriting'
+              : 'Parol o\'rnating'}
           </p>
         </div>
 
         {error && <div className="login-alert login-alert--error">{error}</div>}
         {success && <div className="login-alert login-alert--success">{success}</div>}
 
-        <form onSubmit={handleSubmit} className="login-form">
-          {isRegister && (
-            <div className="login-form__group">
-              <label className="login-form__label">To'liq ism</label>
-              <input
-                type="text"
-                className="login-form__input"
-                placeholder="Ismingizni kiriting"
-                value={fullName}
-                onChange={e => setFullName(e.target.value)}
-                required
-              />
-            </div>
-          )}
-          <div className="login-form__group">
-            <label className="login-form__label">Telefon raqami</label>
-            <input
-              type="text"
-              className="login-form__input"
-              placeholder="+998 (90) 123-45-67"
-              value={phone}
-              onChange={handlePhoneChange}
-              required
-            />
-          </div>
-          <div className="login-form__group">
-            <label className="login-form__label">Parol</label>
-            <input
-              type="password"
-              className="login-form__input"
-              placeholder="Parolingizni kiriting"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              minLength={6}
-            />
-          </div>
-          <button type="submit" className="login-form__btn" disabled={loading}>
-            {loading ? 'Kutilmoqda...' : isRegister ? 'Ro\'yxatdan o\'tish' : 'Kirish'}
-          </button>
-        </form>
+        {step === 'phone' && renderPhoneStep()}
+        {step === 'otp' && renderOtpStep()}
+        {step === 'password' && renderPasswordStep()}
 
-        <p className="login-card__switch">
-          {isRegister ? 'Hisobingiz bormi?' : 'Hisobingiz yo\'qmi?'}{' '}
-          <button onClick={() => { setIsRegister(!isRegister); setError(''); setSuccess(''); setPhone('+998'); }}>
-            {isRegister ? 'Kirish' : 'Ro\'yxatdan o\'tish'}
+        {step !== 'phone' && (
+          <button onClick={handleBack} className="login-form__btn login-form__btn--back">
+            Orqaga
           </button>
-        </p>
+        )}
+
+        {step === 'phone' && (
+          <p className="login-card__switch">
+            {isRegister ? 'Hisobingiz bormi?' : 'Hisobingiz yo\'qmi?'}{' '}
+            <button onClick={switchMode}>
+              {isRegister ? 'Kirish' : 'Ro\'yxatdan o\'tish'}
+            </button>
+          </p>
+        )}
       </div>
     </div>
   );
