@@ -40,7 +40,8 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) console.error('getSession error:', error);
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id, { phone: session.user.phone, full_name: session.user.user_metadata?.full_name });
@@ -49,7 +50,7 @@ export function AuthProvider({ children }) {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
         setUser(session?.user ?? null);
         if (session?.user) {
           await fetchProfile(session.user.id, { phone: session.user.phone, full_name: session.user.user_metadata?.full_name });
