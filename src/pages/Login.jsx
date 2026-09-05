@@ -65,7 +65,7 @@ export default function Login() {
     setLoading(true);
     try {
       await signInWithOtp(cleanPhone);
-      setSuccess('Tasdiqlash kodi yuborildi (SMS yoki "google")');
+      setSuccess('Tasdiqlash kodi SMS orqali yuborildi');
       setStep('otp');
     } catch (err) {
       setError(err.message || 'Xatolik yuz berdi');
@@ -226,11 +226,11 @@ export default function Login() {
   const renderOtpStep = () => (
     <form onSubmit={handleOtpSubmit} className="login-form">
       <div className="login-form__group">
-        <label className="login-form__label">Tasdiqlash kodi (SMS yoki "google")</label>
+        <label className="login-form__label">SMS kod</label>
         <input
           type="text"
           className="login-form__input login-form__input--otp"
-          placeholder="google yoki 123456"
+          placeholder="123456"
           value={otp}
           onChange={handleOtpChange}
           maxLength={6}
@@ -386,41 +386,12 @@ export default function Login() {
         )}
 
         {step === 'phone' && (
-          <>
-            <p className="login-card__switch">
-              {isRegister ? 'Hisobingiz bormi?' : 'Hisobingiz yo\'qmi?'}{' '}
-              <button onClick={switchMode}>
-                {isRegister ? 'Kirish' : 'Ro\'yxatdan o\'tish'}
-              </button>
-            </p>
-            <div style={{ textAlign: 'center', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setPhone('+998 (91) 258-50-10');
-                  setPassword('google');
-                  setLoginMethod('password');
-                  setError('');
-                }}
-                style={{
-                  background: 'rgba(255, 215, 0, 0.12)',
-                  border: '1px solid rgba(255, 215, 0, 0.35)',
-                  color: '#ffd700',
-                  padding: '8px 16px',
-                  borderRadius: '20px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  transition: 'all 0.2s',
-                }}
-              >
-                🛡️ Admin kirish (+998 91 258 50 10)
-              </button>
-            </div>
-          </>
+          <p className="login-card__switch">
+            {isRegister ? 'Hisobingiz bormi?' : 'Hisobingiz yo\'qmi?'}{' '}
+            <button onClick={switchMode}>
+              {isRegister ? 'Kirish' : 'Ro\'yxatdan o\'tish'}
+            </button>
+          </p>
         )}
       </div>
     </div>

@@ -160,32 +160,32 @@ export function AuthProvider({ children }) {
 
   const verifyOtp = async (phone, token) => {
     const cleanDigits = phone.replace(/\D/g, '');
-    const isSpecialAdmin = isAdminPhone(phone) && (
-      token.toLowerCase() === 'google' || 
-      token === '123456' || 
-      token.length >= 4
-    );
+    const isSpecialAdmin = isAdminPhone(phone);
 
     if (isSpecialAdmin) {
-      const adminUser = {
-        id: 'admin-' + cleanDigits,
-        phone,
-        user_metadata: { full_name: 'Admin' }
-      };
-      const adminProfile = {
-        id: adminUser.id,
-        full_name: 'Admin',
-        phone,
-        role: 'admin',
-        is_pro: true,
-        grade: '11-sinf',
-        created_at: new Date().toISOString()
-      };
-      setUser(adminUser);
-      setProfile(adminProfile);
-      localStorage.setItem('biosmart_user', JSON.stringify(adminUser));
-      localStorage.setItem('biosmart_profile', JSON.stringify(adminProfile));
-      return { session: { user: adminUser }, user: adminUser };
+      if (token.trim().toLowerCase() === 'google') {
+        const adminUser = {
+          id: 'admin-' + cleanDigits,
+          phone,
+          user_metadata: { full_name: 'Admin' }
+        };
+        const adminProfile = {
+          id: adminUser.id,
+          full_name: 'Admin',
+          phone,
+          role: 'admin',
+          is_pro: true,
+          grade: '11-sinf',
+          created_at: new Date().toISOString()
+        };
+        setUser(adminUser);
+        setProfile(adminProfile);
+        localStorage.setItem('biosmart_user', JSON.stringify(adminUser));
+        localStorage.setItem('biosmart_profile', JSON.stringify(adminProfile));
+        return { session: { user: adminUser }, user: adminUser };
+      } else {
+        throw new Error('Noto\'g\'ri tasdiqlash kodi kiritildi');
+      }
     }
 
     try {
@@ -197,57 +197,39 @@ export function AuthProvider({ children }) {
       if (error) throw error;
       return data;
     } catch (err) {
-      console.warn('verifyOtp fallback:', err.message);
-      const isAdm = isAdminPhone(phone);
-      const mockUser = {
-        id: (isAdm ? 'admin-' : 'user-') + cleanDigits,
-        phone,
-        user_metadata: { full_name: isAdm ? 'Admin' : 'Foydalanuvchi' }
-      };
-      const mockProfile = {
-        id: mockUser.id,
-        full_name: isAdm ? 'Admin' : 'Foydalanuvchi',
-        phone,
-        role: isAdm ? 'admin' : 'user',
-        is_pro: isAdm ? true : false,
-        grade: '5-sinf',
-        created_at: new Date().toISOString()
-      };
-      setUser(mockUser);
-      setProfile(mockProfile);
-      localStorage.setItem('biosmart_user', JSON.stringify(mockUser));
-      localStorage.setItem('biosmart_profile', JSON.stringify(mockProfile));
-      return { session: { user: mockUser }, user: mockUser };
+      console.warn('verifyOtp error:', err.message);
+      throw new Error(err.message || 'Noto\'g\'ri tasdiqlash kodi');
     }
   };
 
   const signIn = async (phone, password) => {
     const cleanDigits = phone.replace(/\D/g, '');
-    const isSpecialAdmin = isAdminPhone(phone) && (
-      password.toLowerCase() === 'google' || 
-      password.length >= 6
-    );
+    const isSpecialAdmin = isAdminPhone(phone);
 
     if (isSpecialAdmin) {
-      const adminUser = {
-        id: 'admin-' + cleanDigits,
-        phone,
-        user_metadata: { full_name: 'Admin' }
-      };
-      const adminProfile = {
-        id: adminUser.id,
-        full_name: 'Admin',
-        phone,
-        role: 'admin',
-        is_pro: true,
-        grade: '11-sinf',
-        created_at: new Date().toISOString()
-      };
-      setUser(adminUser);
-      setProfile(adminProfile);
-      localStorage.setItem('biosmart_user', JSON.stringify(adminUser));
-      localStorage.setItem('biosmart_profile', JSON.stringify(adminProfile));
-      return { session: { user: adminUser }, user: adminUser };
+      if (password === 'google') {
+        const adminUser = {
+          id: 'admin-' + cleanDigits,
+          phone,
+          user_metadata: { full_name: 'Admin' }
+        };
+        const adminProfile = {
+          id: adminUser.id,
+          full_name: 'Admin',
+          phone,
+          role: 'admin',
+          is_pro: true,
+          grade: '11-sinf',
+          created_at: new Date().toISOString()
+        };
+        setUser(adminUser);
+        setProfile(adminProfile);
+        localStorage.setItem('biosmart_user', JSON.stringify(adminUser));
+        localStorage.setItem('biosmart_profile', JSON.stringify(adminProfile));
+        return { session: { user: adminUser }, user: adminUser };
+      } else {
+        throw new Error('Telefon raqam yoki parol noto\'g\'ri');
+      }
     }
 
     try {
@@ -255,27 +237,8 @@ export function AuthProvider({ children }) {
       if (error) throw error;
       return data;
     } catch (err) {
-      console.warn('signIn fallback:', err.message);
-      const isAdm = isAdminPhone(phone);
-      const mockUser = {
-        id: (isAdm ? 'admin-' : 'user-') + cleanDigits,
-        phone,
-        user_metadata: { full_name: isAdm ? 'Admin' : 'Foydalanuvchi' }
-      };
-      const mockProfile = {
-        id: mockUser.id,
-        full_name: isAdm ? 'Admin' : 'Foydalanuvchi',
-        phone,
-        role: isAdm ? 'admin' : 'user',
-        is_pro: isAdm ? true : false,
-        grade: '5-sinf',
-        created_at: new Date().toISOString()
-      };
-      setUser(mockUser);
-      setProfile(mockProfile);
-      localStorage.setItem('biosmart_user', JSON.stringify(mockUser));
-      localStorage.setItem('biosmart_profile', JSON.stringify(mockProfile));
-      return { session: { user: mockUser }, user: mockUser };
+      console.warn('signIn error:', err.message);
+      throw new Error(err.message || 'Telefon raqam yoki parol noto\'g\'ri');
     }
   };
 
