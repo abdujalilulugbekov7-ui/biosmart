@@ -1,18 +1,13 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+import LoadingScreen from './LoadingScreen';
+
 export default function ProtectedRoute({ children, adminOnly = false }) {
   const { user, isAdmin, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="loader">
-          <div className="leaf-spinner">🌿</div>
-          <p>Yuklanmoqda...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="BioSmart platformasi yuklanmoqda..." />;
   }
 
   if (!user) {
