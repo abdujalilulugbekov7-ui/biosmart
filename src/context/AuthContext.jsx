@@ -279,32 +279,37 @@ export function AuthProvider({ children }) {
       pro_expires_at: expiresStr
     };
 
-    if (!user && profile) {
+    setProfile(prev => {
+      const next = prev ? { ...prev, ...updates } : { id: user?.id || 'user', role: 'user', ...updates };
       try {
-        const profiles = JSON.parse(localStorage.getItem('biosmart_profiles') || '[]');
-        const idx = profiles.findIndex(p => p.id === profile.id);
-        if (idx > -1) {
-          profiles[idx] = { ...profiles[idx], ...updates };
-          localStorage.setItem('biosmart_profiles', JSON.stringify(profiles));
-        }
-        setProfile(prev => prev ? { ...prev, ...updates } : prev);
-        return;
-      } catch (err) {
-        console.warn('Local storage profile update failed:', err);
+        localStorage.setItem('biosmart_profile', JSON.stringify(next));
+      } catch (e) {
+        console.warn('localStorage profile save failed:', e);
       }
-    }
-    if (!user) return;
+      return next;
+    });
+
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id);
-      if (error) throw error;
-      
-      setProfile(prev => prev ? { ...prev, ...updates } : prev);
+      const profiles = JSON.parse(localStorage.getItem('biosmart_profiles') || '[]');
+      const targetId = user?.id || profile?.id;
+      const idx = profiles.findIndex(p => p.id === targetId);
+      if (idx > -1) {
+        profiles[idx] = { ...profiles[idx], ...updates };
+        localStorage.setItem('biosmart_profiles', JSON.stringify(profiles));
+      }
     } catch (err) {
-      console.error('Failed to update subscription:', err);
-      throw err;
+      console.warn('Local storage profiles array update failed:', err);
+    }
+
+    if (user?.id) {
+      try {
+        await supabase
+          .from('profiles')
+          .update(updates)
+          .eq('id', user.id);
+      } catch (err) {
+        console.warn('Remote subscription update skipped (offline mode):', err);
+      }
     }
   }, [user, profile]);
 

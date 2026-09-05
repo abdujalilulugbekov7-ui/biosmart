@@ -1073,7 +1073,10 @@ const allQA = [
     ['Dori ishlab chiqarish', 'Kasalliklarni aniqlash', 'Vaktsinalar yaratish', 'Genlar dori preparatlarga ta\'sirini o\'rganish']),
 ];
 
-export const localQuestions = allQA.map(qa => qa.question);
+export const localQuestions = allQA.map(qa => ({
+  ...qa.question,
+  question_options: qa.options
+}));
 export const localQuestionOptions = allQA.flatMap(qa => qa.options);
 
 export const localDidYouKnow = [

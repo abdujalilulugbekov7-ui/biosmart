@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import { localDidYouKnow } from '../data/localLibraryData';
 import { FiSearch, FiArrowRight, FiTarget, FiPercent, FiRefreshCw } from 'react-icons/fi';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import './Dashboard.css';
 
-const defaultFact = {
+const defaultFact = localDidYouKnow[0] || {
   fact_text: 'Asal hech qachon buzilmaydi. Arxeologlar Misr piramidalaridan 3000 yillik asal topishgan!',
 };
 
@@ -27,12 +28,15 @@ export default function Dashboard() {
     setIsRotating(true);
     try {
       const { data } = await supabase.from('did_you_know').select('*');
-      if (data && data.length > 0) {
-        const filtered = data.filter(d => d.fact_text !== fact.fact_text);
-        const pool = filtered.length > 0 ? filtered : data;
-        setFact(pool[Math.floor(Math.random() * pool.length)]);
-      }
-    } catch (e) { console.log(e); }
+      const pool = (data && data.length > 0) ? data : localDidYouKnow;
+      const filtered = pool.filter(d => d.fact_text !== fact.fact_text);
+      const chosen = filtered.length > 0 ? filtered : pool;
+      setFact(chosen[Math.floor(Math.random() * chosen.length)]);
+    } catch (e) {
+      const filtered = localDidYouKnow.filter(d => d.fact_text !== fact.fact_text);
+      const chosen = filtered.length > 0 ? filtered : localDidYouKnow;
+      setFact(chosen[Math.floor(Math.random() * chosen.length)]);
+    }
     setTimeout(() => setIsRotating(false), 600);
   };
 
@@ -49,16 +53,34 @@ export default function Dashboard() {
       const { data } = await supabase.from('did_you_know').select('*');
       if (data && data.length > 0) {
         setFact(data[Math.floor(Math.random() * data.length)]);
+      } else {
+        setFact(localDidYouKnow[Math.floor(Math.random() * localDidYouKnow.length)]);
       }
-    } catch (e) { console.log(e); }
+    } catch (e) {
+      setFact(localDidYouKnow[Math.floor(Math.random() * localDidYouKnow.length)]);
+    }
   };
 
   const fetchStats = async () => {
     try {
-      const { data } = await supabase.from('test_attempts').select('completed_at, score, total_questions').eq('user_id', user.id);
-      if (data && data.length > 0) {
-        const totalQ = data.reduce((a, b) => a + b.total_questions, 0);
-        const totalScore = data.reduce((a, b) => a + b.score, 0);
+      let attempts = [];
+      try {
+        const { data } = await supabase.from('test_attempts').select('completed_at, score, total_questions').eq('user_id', user.id);
+        if (data && data.length > 0) {
+          attempts = data;
+        }
+      } catch (err) {
+        console.warn('Supabase test_attempts error, checking localStorage:', err);
+      }
+
+      if (attempts.length === 0) {
+        const localAtt = JSON.parse(localStorage.getItem('biosmart_test_attempts') || '[]');
+        attempts = localAtt.filter(a => a.user_id === user.id || a.user_id === 'guest');
+      }
+
+      if (attempts.length > 0) {
+        const totalQ = attempts.reduce((a, b) => a + (b.total_questions || 0), 0);
+        const totalScore = attempts.reduce((a, b) => a + (b.score || 0), 0);
         setStats({ totalQuestions: totalQ, accuracy: totalQ > 0 ? Math.round((totalScore / totalQ) * 100) : 0 });
 
         const daysMapping = [6, 0, 1, 2, 3, 4, 5];

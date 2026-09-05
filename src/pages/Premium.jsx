@@ -297,23 +297,37 @@ export default function Premium() {
   const handleCashRequest = async () => {
     setCashLoading(true);
     try {
-      const session = await supabase.auth.getSession();
-      const token = session?.data?.session?.access_token;
+      try {
+        const session = await supabase.auth.getSession();
+        const token = session?.data?.session?.access_token;
 
-      const res = await fetch(`${API_URL}/api/subscriptions/request`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ planType: selectedPlan })
-      });
+        const res = await fetch(`${API_URL}/api/subscriptions/request`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ planType: selectedPlan })
+        });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Xatolik yuz berdi');
+        if (res.ok) {
+          setCashRequested(true);
+          return;
+        }
+      } catch (netErr) {
+        console.warn('Backend unavailable, saving cash request locally:', netErr);
       }
 
+      const existing = JSON.parse(localStorage.getItem('biosmart_cash_requests') || '[]');
+      existing.push({
+        id: Date.now(),
+        userId: user?.id || 'guest',
+        phone: user?.phone || profile?.phone || 'Noma\'lum',
+        planType: selectedPlan,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      });
+      localStorage.setItem('biosmart_cash_requests', JSON.stringify(existing));
       setCashRequested(true);
     } catch (err) {
       await showAlert(err.message || 'Serverga ulanishda xatolik', {

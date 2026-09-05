@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useDialog } from '../context/DialogContext';
+import { localTopics, localSubjects, localGrades } from '../data/localLibraryData';
 import { FiArrowLeft, FiClock, FiFileText, FiChevronLeft, FiChevronRight, FiVolume2, FiVolumeX, FiCheckCircle } from 'react-icons/fi';
 import './BookReader.css';
 
@@ -36,22 +37,55 @@ export default function BookReader() {
     }
     setLoading(true);
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('topics')
         .select('*, subjects(name, grades(name))')
         .eq('id', topicId)
         .single();
-      setTopic(data);
+      if (!error && data) {
+        setTopic(data);
+      } else {
+        const found = localTopics.find(t => String(t.id) === String(topicId));
+        if (found) {
+          const subj = localSubjects.find(s => s.id === found.subject_id);
+          const gr = localGrades.find(g => g.id === subj?.grade_id);
+          setTopic({
+            ...found,
+            subjects: {
+              name: subj?.name || 'Biologiya',
+              grades: { name: gr?.name || 'Darslik' }
+            }
+          });
+        }
+      }
+
       if (user) {
-        // Track recent progress
-        await supabase.from('user_progress').upsert({
-          user_id: user.id,
-          topic_id: parseInt(topicId),
-          progress: 50, // Reading page initialized
-          last_accessed: new Date().toISOString(),
+        try {
+          await supabase.from('user_progress').upsert({
+            user_id: user.id,
+            topic_id: parseInt(topicId),
+            progress: 50,
+            last_accessed: new Date().toISOString(),
+          });
+        } catch (progErr) {
+          console.warn('Progress sync skipped:', progErr);
+        }
+      }
+    } catch (e) {
+      console.warn('fetchTopic fallback:', e);
+      const found = localTopics.find(t => String(t.id) === String(topicId));
+      if (found) {
+        const subj = localSubjects.find(s => s.id === found.subject_id);
+        const gr = localGrades.find(g => g.id === subj?.grade_id);
+        setTopic({
+          ...found,
+          subjects: {
+            name: subj?.name || 'Biologiya',
+            grades: { name: gr?.name || 'Darslik' }
+          }
         });
       }
-    } catch (e) { console.log(e); }
+    }
     setLoading(false);
   };
 

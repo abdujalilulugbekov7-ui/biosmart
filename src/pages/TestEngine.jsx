@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useDialog } from '../context/DialogContext';
+import { localQuestions, localTopics } from '../data/localLibraryData';
 import { FiArrowRight, FiClock, FiCheckCircle, FiXCircle, FiBookOpen, FiSettings, FiPlay } from 'react-icons/fi';
 import './TestEngine.css';
 
@@ -47,40 +48,57 @@ export default function TestEngine() {
     try {
       if (topicId === 'mixed') {
         setTopicTitle("Aralash test");
-        const sId = searchParams.get('subject_id');
+        let questionsList = [];
         if (sId) {
-          // 1. Fetch topics belonging to this subject
-          const { data: topicsData } = await supabase
-            .from('topics')
-            .select('id')
-            .eq('subject_id', parseInt(sId));
-          
-          if (topicsData && topicsData.length > 0) {
-            const topicIds = topicsData.map(t => t.id);
-            // 2. Fetch questions using .in filter
+          try {
+            const { data: topicsData } = await supabase
+              .from('topics')
+              .select('id')
+              .eq('subject_id', parseInt(sId));
+            
+            const topicIds = (topicsData && topicsData.length > 0)
+              ? topicsData.map(t => t.id)
+              : localTopics.filter(t => t.subject_id === parseInt(sId)).map(t => t.id);
+
             const { data } = await supabase
               .from('questions')
               .select('*, question_options(*)')
               .in('topic_id', topicIds);
             
-            setAllQuestions(data || []);
-          } else {
-            setAllQuestions([]);
+            if (data && data.length > 0) {
+              questionsList = data;
+            } else {
+              questionsList = localQuestions.filter(q => topicIds.includes(q.topic_id));
+            }
+          } catch (e) {
+            console.warn('Mixed test query fallback:', e);
+            const topicIds = localTopics.filter(t => t.subject_id === parseInt(sId)).map(t => t.id);
+            questionsList = localQuestions.filter(q => topicIds.includes(q.topic_id));
           }
-        } else {
-          setAllQuestions([]);
         }
+        if (questionsList.length === 0) {
+          questionsList = localQuestions;
+        }
+        setAllQuestions(questionsList);
       } else if (topicId === 'custom') {
         setTopicTitle("Tanlangan mavzular bo'yicha test");
         setQuestionsLimit(100);
         const tIdsStr = searchParams.get('topic_ids');
         if (tIdsStr) {
           const topicIds = tIdsStr.split(',').map(Number);
-          const { data } = await supabase
-            .from('questions')
-            .select('*, question_options(*)')
-            .in('topic_id', topicIds);
-          setAllQuestions(data || []);
+          try {
+            const { data } = await supabase
+              .from('questions')
+              .select('*, question_options(*)')
+              .in('topic_id', topicIds);
+            if (data && data.length > 0) {
+              setAllQuestions(data);
+            } else {
+              setAllQuestions(localQuestions.filter(q => topicIds.includes(q.topic_id)));
+            }
+          } catch (e) {
+            setAllQuestions(localQuestions.filter(q => topicIds.includes(q.topic_id)));
+          }
         } else {
           setAllQuestions([]);
         }
@@ -91,27 +109,59 @@ export default function TestEngine() {
         
         let filteredWrong = allWrong;
         if (sId) {
-          const { data: topicsData } = await supabase
-            .from('topics')
-            .select('id')
-            .eq('subject_id', parseInt(sId));
-          const topicIds = (topicsData || []).map(t => t.id);
-          filteredWrong = allWrong.filter(q => topicIds.includes(q.topic_id));
+          try {
+            const { data: topicsData } = await supabase
+              .from('topics')
+              .select('id')
+              .eq('subject_id', parseInt(sId));
+            const topicIds = (topicsData && topicsData.length > 0)
+              ? topicsData.map(t => t.id)
+              : localTopics.filter(t => t.subject_id === parseInt(sId)).map(t => t.id);
+            filteredWrong = allWrong.filter(q => topicIds.includes(q.topic_id));
+          } catch (e) {
+            const topicIds = localTopics.filter(t => t.subject_id === parseInt(sId)).map(t => t.id);
+            filteredWrong = allWrong.filter(q => topicIds.includes(q.topic_id));
+          }
         }
         setAllQuestions(filteredWrong);
       } else {
-        const { data: topic } = await supabase.from('topics').select('title').eq('id', topicId).single();
-        if (topic) setTopicTitle(topic.title);
+        let foundTitle = '';
+        let questionsList = [];
+        try {
+          const { data: topic } = await supabase.from('topics').select('title').eq('id', topicId).single();
+          if (topic) foundTitle = topic.title;
 
-        const { data } = await supabase
-          .from('questions')
-          .select('*, question_options(*)')
-          .eq('topic_id', topicId)
-          .order('id');
-        
-        setAllQuestions(data || []);
+          const { data } = await supabase
+            .from('questions')
+            .select('*, question_options(*)')
+            .eq('topic_id', topicId)
+            .order('id');
+          
+          if (data && data.length > 0) {
+            questionsList = data;
+          }
+        } catch (e) {
+          console.warn('Single test query fallback:', e);
+        }
+
+        if (!foundTitle) {
+          const localTop = localTopics.find(t => String(t.id) === String(topicId));
+          foundTitle = localTop?.title || `Test #${topicId}`;
+        }
+        setTopicTitle(foundTitle);
+
+        if (questionsList.length === 0) {
+          questionsList = localQuestions.filter(q => String(q.topic_id) === String(topicId));
+          if (questionsList.length === 0) {
+            questionsList = localQuestions.slice(0, 15);
+          }
+        }
+        setAllQuestions(questionsList);
       }
-    } catch (e) { console.log(e); }
+    } catch (e) {
+      console.warn('fetchQuestions overall fallback:', e);
+      setAllQuestions(localQuestions.slice(0, 20));
+    }
     setLoading(false);
   };
 
@@ -220,6 +270,18 @@ export default function TestEngine() {
     
     if (user) {
       try {
+        const attempts = JSON.parse(localStorage.getItem('biosmart_test_attempts') || '[]');
+        attempts.unshift({
+          id: Date.now(),
+          user_id: user.id,
+          topic_id: parseInt(topicId) || 0,
+          score: computedScore,
+          total_questions: questions.length,
+          time_spent: timeElapsed,
+          completed_at: new Date().toISOString()
+        });
+        localStorage.setItem('biosmart_test_attempts', JSON.stringify(attempts));
+
         await supabase.from('test_attempts').insert({
           user_id: user.id,
           topic_id: parseInt(topicId) || 0,
@@ -244,7 +306,9 @@ export default function TestEngine() {
             });
           }
         }
-      } catch (e) { console.log(e); }
+      } catch (e) {
+        console.warn('Attempt sync to Supabase skipped:', e);
+      }
     }
   };
 

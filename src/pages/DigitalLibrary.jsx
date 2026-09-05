@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { localGrades, localSubjects, localTopics } from '../data/localLibraryData';
 import { FiArrowLeft, FiClock, FiBookOpen, FiTarget, FiLock, FiStar, FiCheck } from 'react-icons/fi';
 import './DigitalLibrary.css';
 
@@ -233,15 +234,17 @@ export default function DigitalLibrary() {
   const handleSearchQuery = async (query) => {
     setSearchLoading(true);
     try {
-      const { data } = await supabase.from('topics').select('*');
-      if (data) {
-        const filtered = data.filter(topic => 
-          topic.title.toLowerCase().includes(query.toLowerCase())
-        );
-        setSearchResults(filtered);
-      }
+      const { data, error } = await supabase.from('topics').select('*');
+      const pool = (!error && data && data.length > 0) ? data : localTopics;
+      const filtered = pool.filter(topic => 
+        topic.title.toLowerCase().includes(query.toLowerCase())
+      );
+      setSearchResults(filtered);
     } catch (e) {
-      console.log(e);
+      const filtered = localTopics.filter(topic => 
+        topic.title.toLowerCase().includes(query.toLowerCase())
+      );
+      setSearchResults(filtered);
     }
     setSearchLoading(false);
   };
@@ -249,9 +252,16 @@ export default function DigitalLibrary() {
   const fetchGrades = async () => {
     setLoading(true);
     try {
-      const { data } = await supabase.from('grades').select('*').order('display_order');
-      setGrades(data || []);
-    } catch (e) { console.log(e); }
+      const { data, error } = await supabase.from('grades').select('*').order('display_order');
+      if (!error && data && data.length > 0) {
+        setGrades(data);
+      } else {
+        setGrades(localGrades);
+      }
+    } catch (e) {
+      console.warn('Using localGrades fallback:', e);
+      setGrades(localGrades);
+    }
     setLoading(false);
   };
 
@@ -265,24 +275,46 @@ export default function DigitalLibrary() {
     }
 
     setSelectedTopicIds([]);
-    setSelectedGrade({ ...grade, emoji: gradeImages[index], subjectName: gradeSubjects[index] });
+    setSelectedGrade({ ...grade, emoji: gradeImages[index % gradeImages.length], subjectName: gradeSubjects[index % gradeSubjects.length] });
     setSelectedSubject(null);
     try {
-      const { data } = await supabase.from('subjects').select('*').eq('grade_id', grade.id);
-      setSubjects(data || []);
-      if (data && data.length > 0) {
+      const { data, error } = await supabase.from('subjects').select('*').eq('grade_id', grade.id);
+      if (!error && data && data.length > 0) {
+        setSubjects(data);
         handleSubjectClick(data[0]);
+      } else {
+        const fallbacks = localSubjects.filter(s => s.grade_id === grade.id);
+        setSubjects(fallbacks);
+        if (fallbacks.length > 0) {
+          handleSubjectClick(fallbacks[0]);
+        }
       }
-    } catch (e) { console.log(e); }
+    } catch (e) {
+      console.warn('Using localSubjects fallback:', e);
+      const fallbacks = localSubjects.filter(s => s.grade_id === grade.id);
+      setSubjects(fallbacks);
+      if (fallbacks.length > 0) {
+        handleSubjectClick(fallbacks[0]);
+      }
+    }
   };
 
   const handleSubjectClick = async (subject) => {
     setSelectedTopicIds([]);
     setSelectedSubject(subject);
     try {
-      const { data } = await supabase.from('topics').select('*').eq('subject_id', subject.id).order('display_order');
-      setTopics(data || []);
-    } catch (e) { console.log(e); }
+      const { data, error } = await supabase.from('topics').select('*').eq('subject_id', subject.id).order('display_order');
+      if (!error && data && data.length > 0) {
+        setTopics(data);
+      } else {
+        const fallbacks = localTopics.filter(t => t.subject_id === subject.id);
+        setTopics(fallbacks);
+      }
+    } catch (e) {
+      console.warn('Using localTopics fallback:', e);
+      const fallbacks = localTopics.filter(t => t.subject_id === subject.id);
+      setTopics(fallbacks);
+    }
   };
 
   const getDifficultyClass = (d) => {
