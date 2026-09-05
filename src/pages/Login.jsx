@@ -83,14 +83,12 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      const { session, user: loggedUser } = await verifyOtp(cleanPhone, otp);
+      const res = await verifyOtp(cleanPhone, otp);
       const isAdm = cleanPhone.includes('912585010') || cleanPhone.includes('901234567');
-      if (session || loggedUser) {
+      if (res?.session || res?.user) {
         navigate(isAdm ? '/admin' : '/');
-      } else if (isRegister) {
-        setStep('password');
       } else {
-        navigate(isAdm ? '/admin' : '/');
+        setStep('password');
       }
     } catch (err) {
       setError(err.message || 'Noto\'g\'ri kod');

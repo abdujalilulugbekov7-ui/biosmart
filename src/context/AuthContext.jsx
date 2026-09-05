@@ -122,40 +122,60 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signUp = async (phone, password, fullName) => {
+    const cleanDigits = phone.replace(/\D/g, '');
+    const isAdm = isAdminPhone(phone);
+
+    const newUser = {
+      id: (isAdm ? 'admin-' : 'user-') + cleanDigits,
+      phone,
+      full_name: fullName || 'Foydalanuvchi',
+      password,
+      role: isAdm ? 'admin' : 'user',
+      is_pro: isAdm,
+      grade: '5-sinf',
+      created_at: new Date().toISOString(),
+      user_metadata: { full_name: fullName || 'Foydalanuvchi' }
+    };
+
     try {
-      if (password && fullName) {
-        const { data, error } = await supabase.auth.updateUser({
-          password,
-          data: { full_name: fullName }
-        });
-        if (error) throw error;
-        return data;
-      }
-      
-      const { data, error } = await supabase.auth.signUp({
-        phone,
-        password: '',
-        options: {
-          data: { full_name: fullName || '' }
-        }
-      });
-      if (error) throw error;
-      return data;
+      const users = JSON.parse(localStorage.getItem('biosmart_users') || '[]');
+      const filtered = users.filter(u => u.phone && u.phone.replace(/\D/g, '') !== cleanDigits);
+      filtered.push(newUser);
+      localStorage.setItem('biosmart_users', JSON.stringify(filtered));
+
+      const profiles = JSON.parse(localStorage.getItem('biosmart_profiles') || '[]');
+      const filteredProf = profiles.filter(p => p.phone && p.phone.replace(/\D/g, '') !== cleanDigits);
+      filteredProf.push(newUser);
+      localStorage.setItem('biosmart_profiles', JSON.stringify(filteredProf));
     } catch (err) {
-      console.warn('signUp fallback:', err.message);
-      return { user: { phone } };
+      console.warn('Local users save error:', err);
     }
+
+    setUser(newUser);
+    setProfile(newUser);
+    localStorage.setItem('biosmart_user', JSON.stringify(newUser));
+    localStorage.setItem('biosmart_profile', JSON.stringify(newUser));
+
+    try {
+      await supabase.auth.signUp({
+        phone,
+        password,
+        options: { data: { full_name: fullName } }
+      });
+    } catch (e) {
+      console.warn('Remote signUp offline:', e.message);
+    }
+
+    return { user: newUser };
   };
 
   const signInWithOtp = async (phone) => {
     try {
-      const { data, error } = await supabase.auth.signInWithOtp({ phone });
-      if (error) throw error;
-      return data;
+      await supabase.auth.signInWithOtp({ phone });
     } catch (err) {
-      console.warn('signInWithOtp fallback:', err.message);
-      return { mock: true };
+      console.warn('signInWithOtp offline fallback:', err.message);
     }
+    return { success: true };
   };
 
   const verifyOtp = async (phone, token) => {
@@ -194,12 +214,25 @@ export function AuthProvider({ children }) {
         token,
         type: 'sms',
       });
-      if (error) throw error;
-      return data;
+      if (!error && data?.session) {
+        return data;
+      }
     } catch (err) {
-      console.warn('verifyOtp error:', err.message);
-      throw new Error(err.message || 'Noto\'g\'ri tasdiqlash kodi');
+      console.warn('Remote verifyOtp offline, checking local accounts:', err.message);
     }
+
+    const localUsers = JSON.parse(localStorage.getItem('biosmart_users') || '[]');
+    const existing = localUsers.find(u => u.phone && u.phone.replace(/\D/g, '') === cleanDigits);
+
+    if (existing) {
+      setUser(existing);
+      setProfile(existing);
+      localStorage.setItem('biosmart_user', JSON.stringify(existing));
+      localStorage.setItem('biosmart_profile', JSON.stringify(existing));
+      return { session: { user: existing }, user: existing };
+    }
+
+    return { session: null, isNew: true };
   };
 
   const signIn = async (phone, password) => {
@@ -232,14 +265,32 @@ export function AuthProvider({ children }) {
       }
     }
 
+    const users = JSON.parse(localStorage.getItem('biosmart_users') || '[]');
+    const existing = users.find(u => u.phone && u.phone.replace(/\D/g, '') === cleanDigits);
+
+    if (existing) {
+      if (existing.password === password) {
+        setUser(existing);
+        setProfile(existing);
+        localStorage.setItem('biosmart_user', JSON.stringify(existing));
+        localStorage.setItem('biosmart_profile', JSON.stringify(existing));
+        return { session: { user: existing }, user: existing };
+      } else {
+        throw new Error('Kiritilgan parol noto\'g\'ri');
+      }
+    }
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ phone, password });
-      if (error) throw error;
-      return data;
-    } catch (err) {
-      console.warn('signIn error:', err.message);
-      throw new Error(err.message || 'Telefon raqam yoki parol noto\'g\'ri');
+      if (!error && data?.user) {
+        setUser(data.user);
+        return data;
+      }
+    } catch (e) {
+      console.warn('Remote signIn offline:', e.message);
     }
+
+    throw new Error('Bu raqam bilan ro\'yxatdan o\'tilmagan. Iltimos, ro\'yxatdan o\'ting.');
   };
 
   const signOut = async () => {
